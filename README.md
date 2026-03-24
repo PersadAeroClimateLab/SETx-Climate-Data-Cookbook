@@ -1,4 +1,4 @@
-# (Replace_with_your_title) Cookbook
+# DOE SETx Downscaled Climate Dataset Cookbook
 
 <img src="thumbnails/thumbnail.png" alt="thumbnail" width="300"/>
 
@@ -16,7 +16,7 @@ This Project Pythia Cookbook covers ... (replace `...` with the main subject of 
 
 ## Authors
 
-[First Author](https://github.com/first-author1), [Second Author](https://github.com/second-author2), etc. _Acknowledge primary content authors here_
+[Cameron Cummins](https://github.com/AgentOxygen), [Ifenayi Nduka](), etc. _Acknowledge primary content authors here_
 
 ### Contributors
 
@@ -88,3 +88,9 @@ If you are interested in running this material locally on your computer, you wil
    cd notebooks/
    jupyter lab
    ```
+
+### Docker
+
+```
+docker run -p 8888:8888 -p 8080:8080 -p 8050:8050 -v .:/home/jovyan -it setx
+```
