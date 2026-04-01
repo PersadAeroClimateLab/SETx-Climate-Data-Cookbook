@@ -16,7 +16,7 @@ This Project Pythia Cookbook covers ... (replace `...` with the main subject of 
 
 ## Authors
 
-[Cameron Cummins](https://github.com/AgentOxygen), [Ifenayi Nduka](), etc. _Acknowledge primary content authors here_
+[Cameron Cummins](https://github.com/AgentOxygen), [Ifenayi Nduka](https://www.jsg.utexas.edu/researcher/ifeanyichukwu_nduka/), etc. _Acknowledge primary content authors here_
 
 ### Contributors
 
@@ -89,8 +89,11 @@ If you are interested in running this material locally on your computer, you wil
    jupyter lab
    ```
 
-### Docker
+### Using Docker
+
+The following docker commands can be used to run the cookbook locally:
 
 ```
+docker build -t setx .
 docker run -p 8888:8888 -p 8080:8080 -p 8050:8050 -v .:/home/jovyan -it setx
 ```
