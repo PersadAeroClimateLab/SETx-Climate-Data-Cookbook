@@ -95,5 +95,5 @@ The following docker commands can be used to run the cookbook locally:
 
 ```
 docker build -t setx .
-docker run -p 8888:8888 -p 8080:8080 -p 8050:8050 -v .:/home/jovyan -it setx
+docker run -p 8888:8888 -it setx
 ```

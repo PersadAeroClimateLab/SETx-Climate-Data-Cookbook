@@ -18,3 +18,4 @@ dependencies:
   - geopandas
   - dash
   - numpy
+  - jupyter-server-proxy
