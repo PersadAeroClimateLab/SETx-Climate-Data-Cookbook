@@ -1,7 +1,6 @@
 # Default JupyterBook build output dir
 _build/
 data/
-src/
 .ipython/
 .npm/
 .yarn/
