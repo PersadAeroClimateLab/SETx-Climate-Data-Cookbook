@@ -1,0 +1,6 @@
+.output_scroll {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    box-shadow: none !important;
+}
