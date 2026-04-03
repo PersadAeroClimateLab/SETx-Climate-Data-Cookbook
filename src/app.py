@@ -80,7 +80,7 @@ app.layout = html.Div([
         # ── Map ───────────────────────────────────────────────────────────────────
         dcc.Graph(
             id="map-graph",
-            style={"height": "50vh"},
+            style={"height": "60vh", "flex": "1"},
             config={
                 "displayModeBar": True,
                 "modeBarButtonsToRemove": [
@@ -100,7 +100,7 @@ app.layout = html.Div([
         # ── Time series ───────────────────────────────────────────────────────────
         dcc.Graph(
             id="line-graph",
-            style={"height": "40vh"},
+            style={"height": "60vh", "flex": "1.75"},
             config={
                 "displayModeBar": True,
                 "modeBarButtonsToRemove": [
@@ -115,7 +115,7 @@ app.layout = html.Div([
                 },
             },
         ),
-    ], style={"display": "flex", "flexDirection": "column"}),
+    ], style={"display": "flex", "flexDirection": "row"}),
 ], style={"fontFamily": "Inter, sans-serif", "backgroundColor": "#ffffff"})
 
 
