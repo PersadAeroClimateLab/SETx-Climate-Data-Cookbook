@@ -8,7 +8,7 @@ Multi-model ensemble time-series for a single Texas county.
 Zero Dash dependencies — works identically in a notebook cell.
 Loads historical (1950–2014) + the chosen SSP scenario (2015–2100),
 and plots one annual-mean trace per CMIP6 model with a bold
-ensemble-median overlay.
+ensemble-mean overlay.
 """
 
 import os
@@ -74,7 +74,7 @@ def create_line_plot(
 ) -> go.Figure:
     """
     Annual time series for all CMIP6 models (semi-transparent) plus
-    a bold ensemble-median trace.  A dashed hline marks the 1980–2014
+    a bold ensemble-mean trace.  A dashed hline marks the 1980–2014
     baseline mean.
     """
     fig = go.Figure()
@@ -99,13 +99,13 @@ def create_line_plot(
 
     if loaded:
         aligned = pd.concat(loaded, axis=1).sort_index()
-        median = aligned.median(axis=1)
+        mean = aligned.mean(axis=1)
 
         fig.add_trace(go.Scatter(
-            x=median.index,
-            y=median.values,
+            x=mean.index,
+            y=mean.values,
             mode="lines",
-            name="Ensemble median",
+            name="Multi-Model Mean",
             line=dict(color="black", width=3),
             hovertemplate="%{y:.2f}",
         ))
