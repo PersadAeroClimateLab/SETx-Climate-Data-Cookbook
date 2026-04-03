@@ -94,6 +94,7 @@ def create_line_plot(
             name=model,
             line=dict(color=colour, width=1.2),
             opacity=0.55,
+            hovertemplate="%{y:.2f}",
         ))
 
     if loaded:
@@ -106,6 +107,7 @@ def create_line_plot(
             mode="lines",
             name="Ensemble median",
             line=dict(color="black", width=3),
+            hovertemplate="%{y:.2f}",
         ))
 
         baseline_vals = [s.loc[1980:2014].mean() for s in loaded]
@@ -147,6 +149,7 @@ def create_line_plot(
         yaxis="y2",
         showlegend=False,
         hoverinfo="skip",
+        hovertemplate="%{y:.2f}",
     ))
 
     fig.update_layout(
