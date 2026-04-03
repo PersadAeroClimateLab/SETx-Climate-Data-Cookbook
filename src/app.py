@@ -76,20 +76,46 @@ app.layout = html.Div([
         "borderBottom": "1px solid #e5e7eb",
     }),
 
-    # ── Map ───────────────────────────────────────────────────────────────────
-    dcc.Graph(
-        id="map-graph",
-        style={"height": "50vh"},
-        config={"displayModeBar": False},
-    ),
-
-    # ── Time series ───────────────────────────────────────────────────────────
-    dcc.Graph(
-        id="line-graph",
-        style={"height": "47vh"},
-        config={"displayModeBar": False},
-    ),
-
+    html.Div([
+        # ── Map ───────────────────────────────────────────────────────────────────
+        dcc.Graph(
+            id="map-graph",
+            style={"height": "50vh"},
+            config={
+                "displayModeBar": True,
+                "modeBarButtonsToRemove": [
+                    "zoom2d", "pan2d", "select2d", "lasso2d",
+                    "zoomIn2d", "zoomOut2d", "autoScale2d", "resetScale2d",
+                    "hoverClosestCartesian", "hoverCompareCartesian",
+                    "hoverClosestGeo", "hoverClosestGl2d",
+                    "toggleHover", "resetViews", "toggleSpikelines",
+                ],
+                "toImageButtonOptions": {
+                    "format": "png",
+                    "filename": "setx_map",
+                    "scale": 2,
+                },
+            },
+        ),
+        # ── Time series ───────────────────────────────────────────────────────────
+        dcc.Graph(
+            id="line-graph",
+            style={"height": "40vh"},
+            config={
+                "displayModeBar": True,
+                "modeBarButtonsToRemove": [
+                    "select2d", "lasso2d",
+                    "hoverClosestCartesian", "hoverCompareCartesian",
+                    "toggleSpikelines", "resetViews",
+                ],
+                "toImageButtonOptions": {
+                    "format": "png",
+                    "filename": "setx_timeseries",
+                    "scale": 2,
+                },
+            },
+        ),
+    ], style={"display": "flex", "flexDirection": "column"}),
 ], style={"fontFamily": "Inter, sans-serif", "backgroundColor": "#ffffff"})
 
 

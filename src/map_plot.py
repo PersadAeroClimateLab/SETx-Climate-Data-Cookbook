@@ -179,7 +179,7 @@ def create_map_plot(
             zmin=zmin,
             zmax=zmax,
             colorscale=COLORSCALES[variable],
-            colorbar=dict(title=dict(text=LABELS[variable], side="right")),
+            colorbar=dict(title=dict(text=LABELS[variable], side="bottom"), y=-0.01, yanchor="top", orientation="h"),
             customdata=names,
             hovertemplate="<b>%{customdata} County</b><br>" + LABELS[variable] + ": %{z:.2f}<extra></extra>",
             marker_line_color="white",
@@ -193,6 +193,7 @@ def create_map_plot(
 
         fig.update_layout(
             title=dict(text=title, x=0.5),
+            uirevision="constant",
             geo=dict(
                 scope="usa",
                 projection_type="albers usa",
@@ -200,10 +201,13 @@ def create_map_plot(
                 showland=True,
                 landcolor="rgba(230,230,230,0.4)",
                 fitbounds="locations",
+                lataxis=dict(range=[25.5, 37.0]),
+                lonaxis=dict(range=[-102.7, -90.4]),
             ),
+            autosize=False,
             template="plotly_white",
             font=dict(family="Inter", size=14),
-            margin=dict(r=20, l=20, t=80, b=20),
+            margin=dict(r=20, l=20, t=80, b=20)
         )
 
     except Exception as e:

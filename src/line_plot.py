@@ -164,14 +164,14 @@ def create_line_plot(
         legend=dict(
             orientation="v",
             yanchor="top", y=1.0,
-            xanchor="left", x=1.01,
+            xanchor="left", x=1.02,
             font=dict(size=11),
             title="Models"
         ),
         hovermode="x unified",
         template="plotly_white",
         font=dict(family="Inter", size=14),
-        margin=dict(r=180, t=80, l=60, b=60),
+        margin=dict(r=180, t=80, l=60, b=75),
     )
 
     return fig
