@@ -1,10 +1,10 @@
 # Default JupyterBook build output dir
 _build/
-data/
 .ipython/
 .npm/
 .yarn/
 .config/
+data/*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

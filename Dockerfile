@@ -19,7 +19,11 @@ RUN mkdir -p ${HOME}/.jupyter/custom
 COPY custom.css ${HOME}/.jupyter/custom/custom.css
 COPY custom.js ${HOME}/.jupyter/custom/custom.js
 
+RUN mkdir -p ${HOME}/data/
+COPY data/download_links.txt ${HOME}/data/
+RUN wget -c -P data/ -i data/download_links.txt
+
 USER root
 RUN chmod -R 777 ${HOME}/notebooks/ ${HOME}/src/ ${HOME}/assets/ && \
-    mkdir -p ${HOME}/data/ && chown -R ${NB_UID}:${NB_UID} ${HOME}
+    chown -R ${NB_UID}:${NB_UID} ${HOME}
 USER ${NB_USER}
