@@ -7,15 +7,14 @@ Multi-model ensemble time-series for a single Texas county.
 
 Zero Dash dependencies — works identically in a notebook cell.
 Loads historical (1950–2014) + the chosen SSP scenario (2015–2100),
-resamples to annual means, and plots one trace per CMIP6 model with
-a bold ensemble-median overlay.
+and plots one annual-mean trace per CMIP6 model with a bold
+ensemble-median overlay.
 """
 
 import os
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 import plotly.graph_objects as go
 
 from config import (
@@ -38,29 +37,24 @@ def _load_annual_series(
     data_dir: str,
 ) -> pd.Series | None:
     """
-    Load hist + *scenario* zarr files for one model/county, concatenate,
-    and return an annual-mean pandas Series.  Returns None if no files found.
+    Load hist + *scenario* CSV files for one model/county and return an
+    annual pandas Series (year integer index).  Returns None if no files found.
     """
     # Always prepend hist for baseline context; deduplicate if scenario == "hist"
     scenarios_to_load = ["hist"] if scenario == "hist" else ["hist", scenario]
 
     parts: list[pd.Series] = []
     for scen in scenarios_to_load:
-        path = os.path.join(data_dir, f"{model}_{scen}_{variable}.zarr")
+        path = os.path.join(data_dir, f"{model}_{scen}_{variable}.csv")
         if not os.path.exists(path):
             continue
         try:
-            ds = xr.open_zarr(path)
-            raw = ds[variable].isel(model=0)
-            raw = raw.mean(dim="county") if county == ALL_COUNTIES_LABEL else raw.sel(county=county)
-            da = apply_unit_conversion(raw, variable)
-            da = da.load()
-            s = pd.Series(
-                da.values,
-                index=pd.DatetimeIndex(da.coords["time"].values),
-                name=model,
-            )
-            parts.append(s)
+            df = pd.read_csv(path, index_col="year")
+            if county == ALL_COUNTIES_LABEL:
+                raw = df.mean(axis=1)
+            else:
+                raw = df[county]
+            parts.append(raw.rename(model))
         except Exception:
             pass
 
@@ -69,19 +63,19 @@ def _load_annual_series(
 
     combined = pd.concat(parts).sort_index()
     combined = combined[~combined.index.duplicated(keep="first")]
-    return combined.resample("YE").mean()
+    return apply_unit_conversion(combined, variable)
 
 
 def create_line_plot(
     variable: str = "tas",
     scenario: str = "ssp370",
     county: str = ALL_COUNTIES_LABEL,
-    data_dir: str = "../data/SETx_County_data",
+    data_dir: str = "../data",
 ) -> go.Figure:
     """
-    Annual-mean time series for all CMIP6 models (semi-transparent) plus
-    a bold ensemble-median trace.  A dashed vertical line marks 2015
-    where historical data ends and SSP projections begin.
+    Annual time series for all CMIP6 models (semi-transparent) plus
+    a bold ensemble-median trace.  A dashed hline marks the 1980–2014
+    baseline mean.
     """
     fig = go.Figure()
     loaded: list[pd.Series] = []
@@ -114,7 +108,7 @@ def create_line_plot(
             line=dict(color="black", width=3),
         ))
 
-        baseline_vals = [s.loc["1980":"2014"].mean() for s in loaded]
+        baseline_vals = [s.loc[1980:2014].mean() for s in loaded]
         baseline_vals = [v for v in baseline_vals if np.isfinite(v)]
         if baseline_vals:
             baseline = float(np.mean(baseline_vals))
@@ -139,6 +133,14 @@ def create_line_plot(
         f"<br><sup>Historical + {get_friendly_scenario(scenario)} — Annual Mean</sup>"
     )
 
+    if not loaded:
+        fig.update_layout(
+            title=dict(text=f"No data available: {title}", x=0.5),
+            template="plotly_white",
+            font=dict(family="Inter", size=14),
+        )
+        return fig
+
     # Invisible trace required to force yaxis2 to render (Plotly limitation)
     fig.add_trace(go.Scatter(
         x=[None], y=[None],
@@ -150,7 +152,7 @@ def create_line_plot(
     fig.update_layout(
         title=dict(text=title, x=0.5),
         xaxis_title="Year",
-        yaxis=dict(title=LABELS[variable]),
+        yaxis=dict(title=LABELS.get(variable, variable)),
         yaxis2=dict(
             overlaying="y",
             side="right",
@@ -178,5 +180,5 @@ def create_line_plot(
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(__file__))
-    _dir = os.path.join(os.path.dirname(__file__), "../data/SETx_County_data")
+    _dir = os.path.join(os.path.dirname(__file__), "../data")
     create_line_plot(data_dir=_dir).show()

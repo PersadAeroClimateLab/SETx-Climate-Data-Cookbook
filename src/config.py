@@ -6,8 +6,8 @@ MULTI_MODEL_LABEL = "Multi-Model Mean"
 ALL_COUNTIES_LABEL = "All Counties"
 
 MODELS = [
-    "BCC-CSM2-MR", "CMCC-ESM2", "CNRM-ESM2-1", "EC-Earth3",
-    "FGOALS-g3", "GFDL-CM4", "MPI-ESM1-2-HR", "MRI-ESM2-0", "NorESM2-MM", "UKESM1-0-LL",
+    "BCC-CSM2-MR", "CESM2", "CMCC-ESM2", "CNRM-ESM2-1", "EC-Earth3",
+    "FGOALS-g3", "GFDL-CM4", "MPI-ESM1-2-HR", "MRI-ESM2-0", "NorESM2-MM",
 ]
 
 LABELS = {

@@ -10,7 +10,7 @@ Clicking a county on the map updates the time series below.
 
 import os
 
-import xarray as xr
+import pandas as pd
 from dash import Dash, Input, Output, State, dcc, html
 from dash.exceptions import PreventUpdate
 
@@ -24,11 +24,12 @@ from map_plot import create_map_plot
 # ── Data directory ─────────────────────────────────────────────────────────────
 DATA_DIR = os.environ.get(
     "SETX_DATA_DIR",
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "SETx_County_data"),
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data"),
 )
 
-_sample = xr.open_zarr(os.path.join(DATA_DIR, "BCC-CSM2-MR_hist_tas.zarr"))
-COUNTIES = sorted(_sample.coords["county"].values.tolist())
+# Derive county list from the header of any available CSV
+_sample_csv = os.path.join(DATA_DIR, "BCC-CSM2-MR_hist_tas.csv")
+COUNTIES = sorted(pd.read_csv(_sample_csv, nrows=0).columns.drop("year").tolist())
 
 # ── Layout helpers ─────────────────────────────────────────────────────────────
 def _ctrl(label: str, child) -> html.Div:

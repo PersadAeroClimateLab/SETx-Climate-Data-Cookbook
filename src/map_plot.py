@@ -12,13 +12,11 @@ import json
 import os
 from urllib.request import urlopen
 
-import geopandas as gpd
-import numpy as np
-import xarray as xr
+import pandas as pd
 import plotly.graph_objects as go
 
 from config import (
-    LABELS, COLORSCALES, COLORBAR_RANGES, MULTI_MODEL_LABEL,
+    LABELS, COLORSCALES, COLORBAR_RANGES, MODELS, MULTI_MODEL_LABEL,
     apply_unit_conversion, get_friendly_variable, get_friendly_scenario, parse_period,
 )
 
@@ -112,7 +110,6 @@ TEXAS_FIPS = {
 }
 
 _GEOJSON_CACHE: dict | None = None
-_COUNTY_GDF_CACHE: gpd.GeoDataFrame | None = None
 
 
 def _load_geojson() -> dict:
@@ -124,61 +121,24 @@ def _load_geojson() -> dict:
     return _GEOJSON_CACHE
 
 
-def _get_texas_county_gdf() -> gpd.GeoDataFrame:
-    global _COUNTY_GDF_CACHE
-    if _COUNTY_GDF_CACHE is None:
-        geojson = _load_geojson()
-        tx_features = [f for f in geojson["features"] if f["id"].startswith("48")]
-        gdf = gpd.GeoDataFrame.from_features(tx_features, crs="EPSG:4326")
-        gdf["fips"] = [f["id"] for f in tx_features]
-        gdf["name"] = [f["properties"].get("NAME", f["id"]) for f in tx_features]
-        _COUNTY_GDF_CACHE = gdf
-    return _COUNTY_GDF_CACHE
-
-
-def _aggregate_grid_to_counties(mean_da) -> gpd.GeoDataFrame:
-    """Spatially aggregate a (lat, lon) DataArray to Texas county means."""
-    tx_gdf = _get_texas_county_gdf()
-
-    lats = mean_da.coords["lat"].values
-    lons = mean_da.coords["lon"].values
-    vals = mean_da.values
-
-    lat_grid, lon_grid = np.meshgrid(lats, lons, indexing="ij")
-    flat_lats = lat_grid.ravel()
-    flat_lons = lon_grid.ravel()
-    flat_vals = vals.ravel()
-
-    finite_mask = np.isfinite(flat_vals)
-    points_gdf = gpd.GeoDataFrame(
-        {"value": flat_vals[finite_mask]},
-        geometry=gpd.points_from_xy(flat_lons[finite_mask], flat_lats[finite_mask]),
-        crs="EPSG:4326",
-    )
-
-    joined = gpd.sjoin(points_gdf, tx_gdf[["fips", "name", "geometry"]], how="left", predicate="within")
-    county_means = joined.groupby("fips").agg({"value": "mean", "name": "first"}).reset_index()
-    return county_means
-
-
-def _load_multimodel_county_means(variable: str, scenario: str, data_dir: str, period: str) -> gpd.GeoDataFrame:
-    """Load multi-model mean NetCDF and return county-aggregated means for the given period."""
-    multi_model_dir = os.path.join(
-        os.path.dirname(os.path.abspath(data_dir.rstrip(os.sep))), "multi-model"
-    )
-    nc_path = os.path.join(multi_model_dir, f"{variable}-{scenario}_multimodel_mean.nc")
-    ds = xr.open_dataset(nc_path)
+def _load_county_means(model: str, scenario: str, variable: str, data_dir: str, period: str) -> pd.Series:
+    """
+    Read one CSV, slice to *period* years, return a county-indexed Series
+    of period-mean values in display units.
+    """
     start_year, end_year = parse_period(period)
-    da = ds[variable].sel(year=slice(start_year, end_year))
-    da = apply_unit_conversion(da.mean(dim="year"), variable).load()
-    return _aggregate_grid_to_counties(da)
+    path = os.path.join(data_dir, f"{model}_{scenario}_{variable}.csv")
+    df = pd.read_csv(path, index_col="year")
+    sliced = df.loc[start_year:end_year]
+    means = sliced.mean(axis=0)  # Series: county name → mean raw value
+    return apply_unit_conversion(means, variable)
 
 
 def create_map_plot(
     variable: str = "tas",
     model: str = MULTI_MODEL_LABEL,
     scenario: str = "ssp370",
-    data_dir: str = "../data/SETx_County_data",
+    data_dir: str = "../data",
     period: str = "2035-2065",
 ) -> go.Figure:
     """
@@ -190,23 +150,25 @@ def create_map_plot(
         start_year, end_year = parse_period(period)
 
         if model == MULTI_MODEL_LABEL:
-            county_df = _load_multimodel_county_means(variable, scenario, data_dir, period)
-            fips  = county_df["fips"].tolist()
-            vals  = county_df["value"].tolist()
-            names = county_df["name"].tolist()
+            all_means: list[pd.Series] = []
+            for m in MODELS:
+                path = os.path.join(data_dir, f"{m}_{scenario}_{variable}.csv")
+                if not os.path.exists(path):
+                    continue
+                try:
+                    all_means.append(_load_county_means(m, scenario, variable, data_dir, period))
+                except Exception:
+                    pass
+            if not all_means:
+                raise FileNotFoundError(f"No CSV data found for {variable}/{scenario}.")
+            county_means = pd.concat(all_means, axis=1).mean(axis=1)
         else:
-            zarr_path = os.path.join(data_dir, f"{model}_{scenario}_{variable}.zarr")
-            ds = xr.open_zarr(zarr_path)
-            da = apply_unit_conversion(ds[variable].isel(model=0), variable)
-            da = da.sel(time=(da.time.dt.year >= start_year) & (da.time.dt.year <= end_year))
-            mean_da = da.mean(dim="time").load()
+            county_means = _load_county_means(model, scenario, variable, data_dir, period)
 
-            counties  = mean_da.coords["county"].values.tolist()
-            values    = mean_da.values.tolist()
-            rows = [(TEXAS_FIPS[c], v, c) for c, v in zip(counties, values) if c in TEXAS_FIPS]
-            if not rows:
-                raise ValueError("No counties matched the FIPS lookup table.")
-            fips, vals, names = map(list, zip(*rows))
+        rows = [(TEXAS_FIPS[c], v, c) for c, v in county_means.items() if c in TEXAS_FIPS]
+        if not rows:
+            raise ValueError("No counties matched the FIPS lookup table.")
+        fips, vals, names = map(list, zip(*rows))
 
         period_label = f"{start_year}–{end_year}"
         zmin, zmax = COLORBAR_RANGES[variable]
@@ -257,5 +219,5 @@ def create_map_plot(
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(__file__))
-    _dir = os.path.join(os.path.dirname(__file__), "../data/SETx_County_data")
+    _dir = os.path.join(os.path.dirname(__file__), "../data")
     create_map_plot(data_dir=_dir).show()
